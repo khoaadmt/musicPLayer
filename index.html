@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Music player</title>
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.2/css/all.min.css"
+      integrity="sha512-HK5fgLBL+xu6dm/Ii3z4xhlSUyZgTT9tuc/hSrtw6uzJOvgRr2a9jyxxT1ely+B+xFAmJKVSTbpM/CuL7qxO8w=="
+      crossorigin="anonymous"
+    />
+    <link rel="preconnect" href="https://fonts.gstatic.com" />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="./assets/css/index.css" />
+  </head>
+  <body>
+    <div class="player">
+      <!-- Dashboard -->
+      <div class="dashboard">
+        <!-- Header -->
+        <header>
+          <h4>Now playing:</h4>
+          <h2>String 57th & 9th</h2>
+        </header>
+
+        <!-- CD -->
+        <div class="cd">
+          <div
+            class="cd-thumb"
+            style="
+              background-image: url('https://i.ytimg.com/vi/jTLhQf5KJSc/maxresdefault.jpg');
+            "
+          ></div>
+        </div>
+
+        <!-- Control -->
+        <div class="control">
+          <div class="btn btn-repeat">
+            <i class="fas fa-redo"></i>
+          </div>
+          <div class="btn btn-prev">
+            <i class="fas fa-step-backward"></i>
+          </div>
+          <div class="btn btn-toggle-play">
+            <i class="fas fa-pause icon-pause"></i>
+            <i class="fas fa-play icon-play"></i>
+          </div>
+          <div class="btn btn-next">
+            <i class="fas fa-step-forward"></i>
+          </div>
+          <div class="btn btn-random">
+            <i class="fas fa-random"></i>
+          </div>
+        </div>
+
+        <input
+          id="progress"
+          class="progress"
+          type="range"
+          value="0"
+          step="0.5"
+          min="0"
+          max="100"
+        />
+
+        <audio id="audio" src=""></audio>
+      </div>
+
+      <!-- Playlist -->
+      <div class="playlist">
+        <div class="song">
+          <div
+            class="thumb"
+            style="background-image: url('./assets/image/bat-tinh-yeu-len.jpg')"
+          ></div>
+          <div class="body">
+            <h3 class="title">Music name</h3>
+            <p class="author">Singer</p>
+          </div>
+          <div class="option">
+            <i class="fas fa-ellipsis-h"></i>
+          </div>
+        </div>
+      </div>
+    </div>
+  </body>
+</html>
+<script>
+  const $ = document.querySelector.bind(document);
+  const $$ = document.querySelectorAll.bind(document);
+  const cd = $(".cd");
+  const cdWidth = cd.offsetWidth;
+  const playBtn = $(".btn-toggle-play");
+  const player = $(".player");
+  const cdThumb = $(".cd-thumb");
+  const cdAudio = $("#audio");
+  const progress = $(".progress");
+  const nextBtn = $(".fa-step-forward");
+  const prevBtn = $(".fa-step-backward");
+  const redo = $(".fa-redo");
+  const randomBtn = $(".fa-random");
+
+  const app = {
+    currentIndex: 0,
+    isPlaying: false,
+    isRedo: false,
+    isRandom: false,
+    songs: [
+      {
+        name: "Bật tình yêu lên",
+        singer: "Tăng duy tân, Hòa Minzy",
+        path: "./assets/music/BatTinhYeuLen-TangDuyTanHoaMinzy-8715666.mp3",
+        image: "./assets/image/bat-tinh-yeu-len.jpg",
+      },
+      {
+        name: "Em đồng ý",
+        singer: "Đức Phúc",
+        path: "./assets/music/EmDongYIDo-DucPhucx911-9034315.mp3",
+        image: "./assets/image/em-dong-y.jpg",
+      },
+      {
+        name: "Nếu lúc đó",
+        singer: "Tlinh",
+        path: "./assets/music/NeuLucDo-tlinh2pillz-8783613.mp3",
+        image: "./assets/image/neu-luc-do.jpg",
+      },
+      {
+        name: "See tình",
+        singer: "Hoàng Thùy Linh",
+        path: "./assets/music/SeeTinh-HoangThuyLinh-7702265.mp3",
+        image: "./assets/image/see-tinh.jpg",
+      },
+      {
+        name: "Waiting for you",
+        singer: "Mono",
+        path: "./assets/music/WaitingForYou-MONOOnionn-7733882.mp3",
+        image: "./assets/image/waiting-for-you.jpg",
+      },
+      {
+        name: "Yêu 5",
+        singer: "Tăng duy tân, Hòa Minzy",
+        path: "./assets/music/Yeu5-Rhymastic-4756973.mp3",
+        image: "./assets/image/yeu-5.jpg",
+      },
+    ],
+    render: function () {
+      var blockSong = $(".playlist");
+      var html = this.songs.map(function (song, index) {
+        return `
+        <div class="song">
+          <div
+            class="thumb"
+            style="background-image: url('${song.image}')"
+          ></div>
+          <div class="body">
+            <h3 class="title">${song.name}</h3>
+            <p class="author">${song.singer}</p>
+          </div>
+          <div class="option">
+            <i class="fas fa-ellipsis-h"></i>
+          </div>
+        </div>
+        `;
+      });
+      blockSong.innerHTML = html.join("");
+    },
+    defineProperties: function () {
+      Object.defineProperty(this, "currentSong", {
+        get: function () {
+          return this.songs[this.currentIndex];
+        },
+      });
+    },
+    audioTimeUpdate() {
+      if (cdAudio.duration) {
+        const progressPercent = (cdAudio.currentTime / cdAudio.duration) * 100;
+        progress.value = Math.floor(progressPercent);
+      }
+    },
+    audioRedo() {
+      app.isRedo = !app.isRedo;
+      redo.classList.toggle("active", app.isRedo);
+    },
+    audioNextRandom() {
+      app.isRandom = !app.isRandom;
+      randomBtn.classList.toggle("active", app.isRandom);
+    },
+    audioNext() {
+      nextBtn.classList.add("active");
+      setTimeout(() => {
+        nextBtn.classList.remove("active");
+      }, 300);
+
+      if (app.currentIndex == app.songs.length - 1) {
+        app.currentIndex = 0;
+      } else {
+        app.currentIndex++;
+      }
+      app.loadCurrentSong();
+      cdAudio.play();
+    },
+    handleEvent() {
+      const _this = this;
+
+      document.onscroll = function () {
+        const scroll = window.scrollY || document.documentElement.scrollTop;
+        const newCdWidth = cdWidth - scroll;
+        cd.style.width = newCdWidth > 0 ? newCdWidth + "px" : 0;
+        cd.style.opacity = newCdWidth / cdWidth;
+      };
+
+      playBtn.onclick = function () {
+        if (_this.isPlaying) {
+          cdAudio.pause();
+        } else {
+          cdAudio.play();
+        }
+      };
+
+      const cdThumbAnimate = cdThumb.animate(
+        [{ transform: "rotate(360deg)" }],
+        {
+          duration: 30000,
+          iterations: Infinity,
+        }
+      );
+      cdThumbAnimate.pause();
+
+      cdAudio.onplay = function () {
+        _this.isPlaying = true;
+        player.classList.add("playing");
+        cdThumbAnimate.play();
+      };
+      cdAudio.onpause = function () {
+        _this.isPlaying = false;
+        player.classList.remove("playing");
+        cdThumbAnimate.pause();
+      };
+
+      cdAudio.ontimeupdate = this.audioTimeUpdate;
+
+      cdAudio.onended = function () {
+        if (_this.isRandom) {
+          _this.audioNext();
+        }
+      };
+
+      progress.oninput = function () {
+        cdAudio.ontimeupdate = function () {};
+      };
+      progress.onchange = function () {
+        cdAudio.currentTime = (progress.value / 100) * cdAudio.duration;
+        cdAudio.ontimeupdate = _this.audioTimeUpdate;
+      };
+
+      nextBtn.onclick = _this.audioNext;
+
+      prevBtn.onclick = function () {
+        prevBtn.classList.add("active");
+        setTimeout(() => {
+          prevBtn.classList.remove("active");
+        }, 300);
+
+        if (_this.currentIndex == 0) {
+          _this.currentIndex = _this.songs.length - 1;
+        } else {
+          _this.currentIndex--;
+        }
+        _this.loadCurrentSong();
+        cdAudio.play();
+      };
+
+      redo.onclick = function () {
+        if (_this.isRandom) {
+          _this.audioNextRandom();
+        }
+        _this.audioRedo();
+      };
+
+      randomBtn.onclick = function () {
+        if (_this.isRedo) {
+          _this.audioRedo();
+        }
+        _this.audioNextRandom();
+      };
+    },
+    loadCurrentSong() {
+      $("header h2").textContent = this.currentSong.name;
+      cdAudio.src = this.currentSong.path;
+      cdThumb.style.backgroundImage = `url('${this.currentSong.image}')`;
+
+      const blockSongs = $$(".song");
+      blockSongs.forEach((blockSong, index) => {
+        blockSong.classList.remove("active");
+        if (app.currentIndex == index) {
+          blockSong.classList.add("active");
+        }
+      });
+
+      console.log(app.currentIndex);
+    },
+    start: function () {
+      this.defineProperties();
+      this.handleEvent();
+
+      this.render();
+      this.loadCurrentSong();
+    },
+  };
+  app.start();
+</script>
